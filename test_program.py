@@ -9,6 +9,31 @@ MAX_TIME        =   1
 MAX_MEMORY      =   2 ** 20
 RAPORT_WRONG    =   5
 
+def benchmark():
+    print("Running benchmark... ")
+    def fib():
+        start_t = time()
+        a = 1
+        b = 1
+        for _ in range(85000):
+            a, b = b, a + b
+        end_t = time()
+        return end_t - start_t
+
+    iterations = 20
+    iteration_time = [fib() for _ in range(iterations)]
+    total_time = sum(iteration_time)
+    avg_time = total_time / iterations
+
+    # should be around ~1 (normalized 1 second)
+    avg_time *= 10
+
+    print("Finished running benchmark")
+    print(f"Normalized time: {round(avg_time, 3)}")
+    print("(this is how long \"1 second\" takes on your computer)\n")
+
+    return avg_time
+
 def clearConsole():
     command = 'clear'
     if os.name in ('nt', 'dos'):  # If Machine is running on Windows, use cls
@@ -42,11 +67,17 @@ def list_error(tab, string):
     return output
 
 # Generate raport about directory
-def raport(tab):
+def raport(tab, benchmark_time):
     output  =   f"TEST OK:          {tab[0]}\n"
     output  +=  f"TEST ERROR:       {tab[1]}\n"
-    output  +=  f"MAX TIME:         {round(tab[2], 3)}s\n"
-    output  +=  f"AVG TIME:         {round(tab[7] / (tab[0] + tab[1]), 3)}s\n"
+    max_time = tab[2]
+    max_norm_time = max_time / benchmark_time
+    avg_time = tab[7] / (tab[0] + tab[1])
+    avg_norm_time = avg_time / benchmark_time
+    output  +=  f"MAX TIME:         {round(max_time, 3)}s\n"
+    output  +=  f"AVG TIME:         {round(avg_time, 3)}s\n"
+    output  +=  f"MAX NORM TIME:    {round(max_norm_time, 3)}\n"
+    output  +=  f"AVG NORM TIME:    {round(avg_norm_time, 3)}\n"
     # if tab[3] < 10 ** 5:
     #     output  +=  f"MAX MEMORY:       LESS THAN 100KB\n"
     # else:
@@ -112,6 +143,7 @@ def check_dir(path):
 
 # Core
 if __name__ == "__main__":
+    normalized_time = benchmark()
     for path in os.walk(sys.argv[1]):
         dir_str = os.path.join(pathlib.Path().resolve(), sys.argv[1])
         if sys.argv[1] != path[0] and os.path.isdir(dir_str):
@@ -120,7 +152,7 @@ if __name__ == "__main__":
             if output[0] + output[1]:
                 clearConsole()
                 print(f"\nRAPORT FOR:       {path[0]}")
-                raport(output)
+                raport(output, normalized_time)
                 print(f"ENTER ANYTHING TO END TESTING {path[0]}: ", end = "")
                 temp = input()
                 
